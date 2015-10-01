@@ -58,24 +58,28 @@ def updated()
 }
 
 def switchHandler(evt) {
+	if (evt.physical) {
+    
+        boolean isStateChange = evt.isStateChange()
+        log.debug "Master Switch Changed State: ${isStateChange}"
 
-    boolean isStateChange = evt.isStateChange()
-    log.debug "Master Switch Changed State: ${isStateChange}"
-    
-    boolean isOff = master.latestState("switch").value == "off"
-    log.debug "Master Switch Currently Off: ${isOff}"
-    
-    // If the Master Switch is currently off and the given event did not result in a state change,
-    // then we know that the off button was pressed while the switch was off.  Good.  Now, let's
-    // toggle the slave switches!  
-    if (isOff && !isStateChange) {
-    	log.debug "Current and prior state were off, let's toggle the switches"
-        toggleSwitches()
+        boolean isOff = master.latestState("switch").value == "off"
+        log.debug "Master Switch Currently Off: ${isOff}"
+
+        // If the Master Switch is currently off and the given event did not result in a state change,
+        // then we know that the off button was pressed while the switch was off.  Good.  Now, let's
+        // toggle the slave switches!  
+        if (isOff && !isStateChange) {
+            log.debug "Current and prior state were off, let's toggle the switches"
+            toggleSwitches()
+        }
     }
 }
 
 private toggleSwitches() {
-    switches.each {
-        it.latestState("switch").value == "off" ? it.on() : it.off()
-    }
+	// If we encounter ANY slave switches that are currently on, then let's send an "off" command
+    // so that we can start at a fresh baseline.  This prevents the situation where there is a mixed
+    // state of slave switches toggling differently.  
+    boolean turnOn = switches.every { it.latestState("switch").value == "off" }
+    turnOn ? switches*.on() : switches*.off()
 }
