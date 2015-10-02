@@ -24,8 +24,7 @@
  * 	Hence, apps like Double Tap are unbearable to use.  This app was created in an effort to provide an 
  * 	alternative to Double Tap (or my version, Better Double Tap) that is 100% reliable.  This app is 
  * 	100% reliable, but keep in mind that due to the need for the event to travel to the cloud first, there
- * 	may be a delay (usually 2 - 3 seconds) for the secondary switches to toggle.  Don't fret, I 
- *	promise they will toggle :)  
+ * 	may be a delay (usually 2 - 3 seconds) for the secondary switches to toggle.  
  */
 definition(
     name: "Off as Toggle ",
@@ -60,20 +59,20 @@ def updated()
 def switchHandler(evt) {
 	if (evt.physical) {
     
-        boolean isStateChange = evt.isStateChange()
-        log.debug "Master Switch Changed State: ${isStateChange}"
+        	boolean isStateChange = evt.isStateChange()
+        	log.debug "Master Switch Changed State: ${isStateChange}"
 
-        boolean isOff = master.latestState("switch").value == "off"
-        log.debug "Master Switch Currently Off: ${isOff}"
+        	boolean isOff = master.latestState("switch").value == "off"
+        	log.debug "Master Switch Currently Off: ${isOff}"
 
-        // If the Master Switch is currently off and the given event did not result in a state change,
-        // then we know that the off button was pressed while the switch was off.  Good.  Now, let's
-        // toggle the slave switches!  
-        if (isOff && !isStateChange) {
-            log.debug "Current and prior state were off, let's toggle the switches"
-            toggleSwitches()
-        }
-    }
+        	// If the Master Switch is currently off and the given event did not result in a state change,
+        	// then we know that the off button was pressed while the switch was off.  Good.  Now, let's
+        	// toggle the slave switches!  
+        	if (isOff && !isStateChange) {
+            		log.debug "Current and prior state were off, let's toggle the switches"
+            		toggleSwitches()
+        	}
+	}	
 }
 
 private toggleSwitches() {
