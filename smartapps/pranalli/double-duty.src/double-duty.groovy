@@ -1,5 +1,5 @@
 /**
- *  Off as Toggle 
+ *  Double Duty 
  *
  *  Copyright 2015 Pasquale Ranalli
  *
