@@ -1,5 +1,5 @@
 /**
- *  Double Duty 
+ *  Double Duty
  *
  *  Copyright 2015 Pasquale Ranalli
  *
@@ -14,21 +14,24 @@
  *
  */
 definition(
-    name: "Off as Toggle ",
+    name: "Double Duty",
     namespace: "pranalli",
     author: "Pasquale Ranalli",
-    description: "This app allows you to re-purpose the \"off\" button of a switch or dimmer as a toggle for a secondary device or devices.",  
+    description: "This app allows you to use redundant \"off\" and, optionally, \"on\" switch presses to control secondary lights.  You paid a lot for those switches, make them work double duty!",  
     category: "Convenience",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Meta/light_outlet.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Meta/light_outlet@2x.png"
 )
 
 preferences {
-    section("The switch whose off button will be re-purposed") {
+	section("The switch whose off button will be re-purposed") {
 		input "master", "capability.switch", title: "Where?"
 	}
     section("The switch(es) to be toggled") {
 		input "switches", "capability.switch", multiple: true, required: false
+	}
+    section("Optional") {
+		input "alsoUseOn", "bool", required: false, defaultValue: false, title: "Also use on button?"
 	}
 }
 
@@ -46,19 +49,20 @@ def updated()
 def switchHandler(evt) {
 	if (evt.physical) {
     
-        	boolean isStateChange = evt.isStateChange()
-        	log.debug "Master Switch Changed State: ${isStateChange}"
+       	boolean isStateChange = evt.isStateChange()
+       	log.debug "Master Switch Changed State: ${isStateChange}"
 
-        	boolean isOff = master.latestState("switch").value == "off"
-        	log.debug "Master Switch Currently Off: ${isOff}"
+       	boolean isOff = master.latestState("switch").value == "off"
+       	log.debug "Master Switch Currently Off: ${isOff}"
 
-        	// If the Master Switch is currently off and the given event did not result in a state change,
-        	// then we know that the off button was pressed while the switch was off.  Good.  Now, let's
-        	// toggle the slave switches!  
-        	if (isOff && !isStateChange) {
-            		log.debug "Current and prior state were off, let's toggle the switches"
-            		toggleSwitches()
-        	}
+		// If the state did not change from the last press, we know this is a redundant event.
+        // If the user selected to use the on button also, then we don't care about the current
+        // state of the switch and can toggle.  Otherwise, we only toggle if the current switch 
+        // state is "off"
+       	if ((alsoUseOn || isOff) && !isStateChange) {
+       		log.debug "Current and prior state were off, let's toggle the switches"
+      		toggleSwitches()
+      	}
 	}	
 }
 
