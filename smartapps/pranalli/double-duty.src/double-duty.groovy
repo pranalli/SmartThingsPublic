@@ -24,47 +24,49 @@ definition(
 )
 
 preferences {
-	section("The Master switch whose on and/or off buttons will serve as toggles") {
-    	paragraph "NOTE: Plain on/off switches are preferable to dimmers.  Be mindful that dimmers may trigger unexpected toggles when turned off or dimmed to 0 (zero).  You've been warned!"
-		input "master", "capability.switch", title: "Select", required: true
-	}
+
+    section("The Master switch whose on and/or off buttons will serve as toggles") {
+    paragraph "NOTE: Plain on/off switches are preferable to dimmers.  Be mindful that dimmers may trigger unexpected toggles when turned off or dimmed to 0 (zero).  You've been warned!"
+        input "master", "capability.switch", title: "Select", required: true
+    }
+
     section("Redundant OFF presses will toggle") {
-		input "offSlaves", "capability.switch", multiple: true, required: false, title: "Select"
-	}
+        input "offSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+    }
+
     section("Redundant ON presses will toggle") {
-		input "onSlaves", "capability.switch", multiple: true, required: false, title: "Select"
-	}
+        input "onSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+    }
 }
 
-def installed()
-{
-	subscribe(master, "switch", switchHandler, [filterEvents: false])
+def installed(){
+    subscribe(master, "switch", switchHandler, [filterEvents: false])
 }
 
-def updated()
-{
-	unsubscribe()
-	subscribe(master, "switch", switchHandler, [filterEvents: false])
+def updated(){
+    unsubscribe()
+    subscribe(master, "switch", switchHandler, [filterEvents: false])
 }
 
 def switchHandler(evt) {
-	if (evt.physical) {
-    
-       	boolean isStateChange = evt.isStateChange()
-       	log.debug "Master Switch Changed State: ${isStateChange}"
 
-       	def state = master.latestState("switch").value
-       	log.debug "Master Switch Latest State: ${state}"
+    if (evt.physical) {
+
+        boolean isStateChange = evt.isStateChange()
+        log.debug "Master Switch Changed State: ${isStateChange}"
+
+        def state = master.latestState("switch").value
+        log.debug "Master Switch Latest State: ${state}"
         
-       	if (!isStateChange) {
-       		log.debug "Press is redundant, toggling slaves associated with the \"${state}\" event"
+        if (!isStateChange) {
+                log.debug "Press is redundant, toggling slaves associated with the \"${state}\" event"
             state == "on" ? toggleSwitches(onSlaves) : toggleSwitches(offSlaves)
-      	}
-	}	
+        }
+    }	
 }
 
 private toggleSwitches(switches) {
-	// If we encounter ANY slave switches that are currently on, then let's send an "off" command
+    // If we encounter ANY slave switches that are currently on, then let's send an "off" command
     // so that we can start at a fresh baseline.  This prevents the situation where there is a mixed
     // state of slave switches toggling differently.  
     boolean turnOn = switches.every { it.latestState("switch").value == "off" }
