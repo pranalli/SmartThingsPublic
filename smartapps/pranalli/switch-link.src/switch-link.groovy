@@ -30,7 +30,7 @@ preferences {
     }
 
     section("Switch(es) to be controlled by the primary switch") {
-        input "switches", "capability.switch", multiple: true, required: false, title: "Select"
+        input "switches", "capability.switch", multiple: true, required: true, title: "Select"
     }
 }
 
