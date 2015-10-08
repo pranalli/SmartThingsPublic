@@ -50,7 +50,7 @@ def updated(){
 
 def switchHandler(evt) {
 
-    if (evt.physical) {
+    if (evt.isPhysical()) {
 
         boolean isStateChange = evt.isStateChange()
         log.debug "Master Switch Changed State: ${isStateChange}"
