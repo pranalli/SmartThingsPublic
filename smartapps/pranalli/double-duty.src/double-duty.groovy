@@ -24,20 +24,47 @@ definition(
 )
 
 preferences {
+	page(name: "selectPrefs")
+   	}
+    
+def selectPrefs() {
+	dynamicPage(name: "selectPrefs", install: true, uninstall: true) {
+    	// Get the list of routines the user has
+        def actions = location.helloHome?.getPhrases()*.label
+        if (actions) {
+        	actions.sort()
+        }
 
-    section("The Master switch whose on and/or off buttons will serve as toggles") {
-    paragraph "NOTE: Plain on/off switches are preferable to dimmers.  Be mindful that dimmers may trigger unexpected toggles when turned off or dimmed to 0 (zero).  You've been warned!"
-        input "master", "capability.switch", title: "Select", required: true
-    }
+		section("The Master switch whose on and/or off buttons will serve as toggles") {
+        paragraph "NOTE: Plain on/off switches are preferable to dimmers.  Be mindful that dimmers may trigger unexpected toggles when turned off or dimmed to 0 (zero).  You've been warned!"
+            input "master", "capability.switch", title: "Select", required: true
+        }
 
-    section("Redundant OFF presses will toggle") {
-        input "offSlaves", "capability.switch", multiple: true, required: false, title: "Select"
-    }
-
-    section("Redundant ON presses will toggle") {
-        input "onSlaves", "capability.switch", multiple: true, required: false, title: "Select"
-    }
+        section("Redundant OFF presses will toggle") {
+            input "offSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+        }
+        
+        section("Redundant ON presses will toggle") {
+            input "onSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+        }
+		
+        if(actions) {
+        	actions.sort() // Make them alphabetical
+            
+            section("Redundant OFF presses will run routines") {
+        		input "offRoutine", "enum", title: "Select an action to execute", options: actions, required: false
+			}
+	        section("Redundant ON presses will run routines") {
+        		input "onRoutine", "enum", title: "Select an action to execute", options: actions, required: false
+            }
+		}
+        
+        section([mobileOnly:true]) {
+		label title: "Assign a name", required: false
+        }
+	}
 }
+
 
 def installed(){
     subscribe(master, "switch", switchHandler, [filterEvents: false])
@@ -59,18 +86,15 @@ def switchHandler(evt) {
         log.debug "Master Switch Latest State: ${state}"
         
         if (!isStateChange) {
-                log.debug "Press is redundant, toggling slaves associated with the \"${state}\" event"
-            state == "on" ? toggleSwitches(onSlaves) : toggleSwitches(offSlaves)
+            log.debug "Press is redundant, toggling slaves associated with the \"${state}\" event"
+            if(state == "on") {
+            	onSlaves*.on()
+                location.helloHome?.execute(settings.onRoutine)
+            } else {
+            	offSlaves*.off()
+                location.helloHome?.execute(settings.offRoutine)
+            }
         }
     }	
 }
 
-private toggleSwitches(switches) {
-    // If we encounter ANY slave switches that are currently on, then let's send an "off" command
-    // so that we can start at a fresh baseline.  This prevents the situation where there is a mixed
-    // state of slave switches toggling differently.  
-    boolean turnOn = switches.every { it.latestState("switch").value == "off" }
-    log.debug "Sending \"" + (turnOn ? "on" : "off") + "\" command to slaves"
-
-    turnOn ? switches*.on() : switches*.off()
-}
