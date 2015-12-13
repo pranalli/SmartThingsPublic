@@ -41,10 +41,18 @@ def selectPrefs() {
         }
 
         section("Redundant OFF presses will toggle") {
-            input "offSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+            input "offToggleSlaves", "capability.switch", multiple: true, required: false, title: "Select"
         }
         
+        section("Redundant OFF presses will turn off") {
+            input "offSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+        }
+
         section("Redundant ON presses will toggle") {
+            input "onToggleSlaves", "capability.switch", multiple: true, required: false, title: "Select"
+        }
+       
+        section("Redundant ON presses will turn on") {
             input "onSlaves", "capability.switch", multiple: true, required: false, title: "Select"
         }
 		
@@ -89,12 +97,23 @@ def switchHandler(evt) {
             log.debug "Press is redundant, toggling slaves associated with the \"${state}\" event"
             if(state == "on") {
             	onSlaves*.on()
+                toggleSwitches(onToggleSlaves)
                 location.helloHome?.execute(settings.onRoutine)
             } else {
             	offSlaves*.off()
+                toggleSwitches(offToggleSlaves)
                 location.helloHome?.execute(settings.offRoutine)
             }
         }
     }	
 }
 
+private toggleSwitches(switches) {
+    // If we encounter ANY slave switches that are currently on, then let's send an "off" command
+    // so that we can start at a fresh baseline.  This prevents the situation where there is a mixed
+    // state of slave switches toggling differently.  
+    boolean turnOn = switches.every { it.latestState("switch").value == "off" }
+    log.debug "Sending \"" + (turnOn ? "on" : "off") + "\" command to slaves"
+
+    turnOn ? switches*.on() : switches*.off()
+}
